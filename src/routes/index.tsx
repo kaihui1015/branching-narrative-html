@@ -1,24 +1,52 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { StoryPlayer } from "@/components/StoryPlayer";
+import { sampleStory } from "@/stories/sample-story";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "Interactive Story Cards — Branching Narrative Template" },
+      {
+        name: "description",
+        content:
+          "A reusable HTML/CSS/JS template for interactive storytelling with flipping cards and branching choices.",
+      },
+      { property: "og:title", content: "Interactive Story Cards" },
+      {
+        property: "og:description",
+        content:
+          "Branching narrative template: prompt, cards that flip to reveal text, then the next set of choices.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
 function Index() {
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+    <div className="min-h-screen bg-background text-foreground">
+      <header className="mx-auto flex w-full max-w-3xl items-center justify-between px-6 pt-8">
+        <div>
+          <h1 className="text-sm font-medium tracking-tight text-foreground">
+            Interactive Story Cards
+          </h1>
+          <p className="text-xs text-muted-foreground">
+            A branching narrative template
+          </p>
+        </div>
+        <a
+          href="/story-cards.html"
+          download
+          className="rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent"
+        >
+          Download template
+        </a>
+      </header>
+      <main>
+        <StoryPlayer story={sampleStory} />
+      </main>
     </div>
   );
 }

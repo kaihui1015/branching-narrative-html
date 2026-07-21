@@ -142,3 +142,96 @@
     color: var(--color-foreground);
   }
 }
+
+/* Story card flip + fan layout */
+.story-card-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  perspective: 1400px;
+  min-height: 280px;
+}
+
+.story-card-wrap {
+  width: 160px;
+  height: 240px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .story-card-grid {
+    flex-direction: column;
+  }
+  .story-card-wrap {
+    transform: none !important;
+    width: min(320px, 85vw);
+    height: 140px;
+  }
+}
+
+.story-card {
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+
+.story-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.7s cubic-bezier(0.65, 0, 0.35, 1);
+  transform-style: preserve-3d;
+}
+
+.story-card-inner.is-flipped {
+  transform: rotateY(180deg);
+}
+
+.story-card-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.story-card-front {
+  background-image:
+    radial-gradient(circle at 20% 10%, color-mix(in oklch, var(--color-foreground) 4%, transparent), transparent 40%),
+    radial-gradient(circle at 80% 90%, color-mix(in oklch, var(--color-foreground) 4%, transparent), transparent 40%);
+}
+
+.story-card-back {
+  transform: rotateY(180deg);
+  justify-content: center;
+  overflow-y: auto;
+}
+
+.story-card:hover .story-card-inner:not(.is-flipped) {
+  transform: translateY(-4px);
+}
+
+/* When the chosen card is enlarged, give the back face more room */
+.story-card-wrap:has(.is-flipped) {
+  width: min(520px, 90vw);
+  height: auto;
+  min-height: 240px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .story-card-inner {
+    transition: none;
+  }
+}
