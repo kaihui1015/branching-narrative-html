@@ -27,7 +27,7 @@ export function StoryCard({ label, reveal, index, total, state, onChoose }: Prop
       style={{
         transform:
           state === "chosen"
-            ? "translate(0,0) rotate(0deg) scale(1.35)"
+            ? "translate(0,0) rotate(0deg)"
             : `translate(${translateX}px, ${translateY}px) rotate(${rotate}deg)`,
       }}
     >
