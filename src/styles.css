@@ -223,11 +223,19 @@
   transform: translateY(-4px);
 }
 
-/* When the chosen card is enlarged, give the back face more room */
+/* Enlarge the chosen card so the revealed text has room to breathe */
 .story-card-wrap:has(.is-flipped) {
-  width: min(520px, 90vw);
+  width: min(560px, 92vw);
   height: auto;
-  min-height: 240px;
+  min-height: 340px;
+  transition: width 0.5s ease, min-height 0.5s ease, transform 0.5s ease;
+}
+.story-card-wrap:has(.is-flipped) .story-card-face {
+  padding: 1.75rem;
+}
+.story-card-wrap:has(.is-flipped) .story-card-back p {
+  font-size: 1.05rem;
+  line-height: 1.7;
 }
 
 @media (prefers-reduced-motion: reduce) {
