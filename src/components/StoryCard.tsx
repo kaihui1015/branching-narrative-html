@@ -1,4 +1,3 @@
-import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -11,39 +10,12 @@ type Props = {
 };
 
 export function StoryCard({ label, reveal, index, total, state, onChoose }: Props) {
-  const [typed, setTyped] = useState("");
-  const rafRef = useRef<number | null>(null);
-
   // Fan rotation for wider screens; centered stack becomes fan on md+.
   const mid = (total - 1) / 2;
   const offset = index - mid;
   const rotate = state === "chosen" ? 0 : offset * 4;
   const translateY = state === "chosen" ? 0 : Math.abs(offset) * 6;
   const translateX = state === "chosen" ? 0 : offset * 8;
-
-  useEffect(() => {
-    if (state !== "chosen") {
-      setTyped("");
-      return;
-    }
-    let i = 0;
-    let last = performance.now();
-    const step = (now: number) => {
-      const dt = now - last;
-      if (dt > 18) {
-        i = Math.min(i + Math.max(1, Math.floor(dt / 18)), reveal.length);
-        setTyped(reveal.slice(0, i));
-        last = now;
-      }
-      if (i < reveal.length) rafRef.current = requestAnimationFrame(step);
-    };
-    rafRef.current = requestAnimationFrame(step);
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    };
-  }, [state, reveal]);
-
-  const skip = () => setTyped(reveal);
 
   return (
     <div
@@ -55,13 +27,13 @@ export function StoryCard({ label, reveal, index, total, state, onChoose }: Prop
       style={{
         transform:
           state === "chosen"
-            ? "translate(0,0) rotate(0deg) scale(1.02)"
+            ? "translate(0,0) rotate(0deg)"
             : `translate(${translateX}px, ${translateY}px) rotate(${rotate}deg)`,
       }}
     >
       <button
         type="button"
-        onClick={state === "chosen" ? skip : onChoose}
+        onClick={state === "chosen" ? undefined : onChoose}
         disabled={state === "dismissed"}
         aria-label={state === "chosen" ? "Reveal text" : `Choose: ${label}`}
         className={cn(
@@ -90,10 +62,7 @@ export function StoryCard({ label, reveal, index, total, state, onChoose }: Prop
           </div>
           <div className="story-card-face story-card-back">
             <p className="text-[15px] leading-relaxed text-foreground font-serif">
-              {typed}
-              {typed.length < reveal.length && (
-                <span className="ml-0.5 inline-block w-[2px] h-[1em] align-[-0.15em] bg-foreground/70 animate-pulse" />
-              )}
+              {reveal}
             </p>
           </div>
         </div>

@@ -68,7 +68,9 @@
     height: 240px;
     transition: transform 0.5s ease, opacity 0.4s ease;
   }
-  .card-wrap.chosen { z-index: 2; width: min(520px, 90vw); height: auto; min-height: 240px; }
+  .card-wrap.chosen { z-index: 2; width: min(560px, 92vw); height: auto; min-height: 340px; }
+  .card-wrap.chosen .face { padding: 1.75rem; }
+  .card-wrap.chosen .reveal { font-size: 1.05rem; line-height: 1.7; }
   .card-wrap.dismissed { opacity: 0; pointer-events: none; }
   @media (max-width: 640px) {
     .grid { flex-direction: column; }
@@ -105,8 +107,6 @@
   .hint { font-size: 0.7rem; color: var(--muted); margin-top: 0.5rem; }
   .badge { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.2em; color: var(--muted); }
   .reveal { font-size: 0.95rem; line-height: 1.6; margin: 0; }
-  .caret { display: inline-block; width: 2px; height: 1em; vertical-align: -0.15em; background: currentColor; animation: blink 1s steps(1) infinite; margin-left: 2px; }
-  @keyframes blink { 50% { opacity: 0; } }
   .final {
     text-align: center;
     font-size: 1.4rem;
@@ -292,25 +292,6 @@ btnRestart.addEventListener("click", () => {
   clearSaved(); state = initialState(); chosenIndex = null; render();
 });
 
-function typeInto(el, text) {
-  el.textContent = "";
-  const caret = document.createElement("span"); caret.className = "caret"; el.after(caret);
-  let i = 0, last = performance.now(), cancelled = false;
-  function step(now) {
-    if (cancelled) return;
-    const dt = now - last;
-    if (dt > 18) {
-      i = Math.min(i + Math.max(1, Math.floor(dt/18)), text.length);
-      el.textContent = text.slice(0, i);
-      last = now;
-    }
-    if (i < text.length) requestAnimationFrame(step);
-    else caret.remove();
-  }
-  requestAnimationFrame(step);
-  return { skip: () => { cancelled = true; el.textContent = text; caret.remove(); } };
-}
-
 function render() {
   const scene = STORY.scenes[state.sceneId];
   stage.innerHTML = "";
@@ -321,9 +302,9 @@ function render() {
     d.className = "final serif";
     d.innerHTML = '<span class="badge">The end</span>';
     const p = document.createElement("p"); p.style.margin = 0;
+    p.textContent = scene.final || "The story ends here.";
     d.appendChild(p);
     stage.appendChild(d);
-    typeInto(p, scene.final || "The story ends here.");
     updateControls();
     return;
   }
@@ -353,20 +334,16 @@ function render() {
     inner.appendChild(front); inner.appendChild(back);
     btn.appendChild(inner); cw.appendChild(btn); grid.appendChild(cw);
 
-    let typer = null;
     btn.addEventListener("click", () => {
-      if (chosenIndex !== null) {
-        if (chosenIndex === i && typer) typer.skip();
-        return;
-      }
+      if (chosenIndex !== null) return;
       chosenIndex = i;
       // dismiss others, flip chosen
       Array.from(grid.children).forEach((el, j) => {
         if (j !== i) el.classList.add("dismissed");
-        else { el.classList.add("chosen"); el.style.transform = "translate(0,0) rotate(0) scale(1.02)"; }
+        else { el.classList.add("chosen"); el.style.transform = "translate(0,0) rotate(0)"; }
       });
       inner.classList.add("flipped");
-      setTimeout(() => { typer = typeInto(rp, c.reveal); }, 500);
+      rp.textContent = c.reveal;
       updateControls();
       // Advance after the reader has time
       setTimeout(() => {
