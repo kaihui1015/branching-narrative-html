@@ -1,0 +1,308 @@
+<!-- ============================================================
+     INTERACTIVE STORY CARDS — CMS EMBED SNIPPET
+     Copy this entire block into a "Custom HTML" / "Embed" block
+     in your CMS article. Everything is scoped to .story-embed so
+     it will not affect the rest of your page.
+     Edit the STORY constant near the bottom to author your story.
+     ============================================================ -->
+<div class="story-embed" id="story-embed-root">
+  <div class="se-header">
+    <div>
+      <h3 class="se-title">Interactive Story</h3>
+      <p class="se-sub">Tap a card to reveal</p>
+    </div>
+  </div>
+  <div class="se-main">
+    <div class="se-stage"></div>
+    <div class="se-controls">
+      <button type="button" class="se-btn" data-action="back">Back</button>
+      <button type="button" class="se-btn" data-action="restart">Restart</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .story-embed {
+    --se-bg: #fafaf7;
+    --se-fg: #1a1a1a;
+    --se-muted: #6b6b6b;
+    --se-card: #ffffff;
+    --se-border: #e6e4de;
+    --se-accent: #f2efe8;
+    background: var(--se-bg);
+    color: var(--se-fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    border: 1px solid var(--se-border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  @media (prefers-color-scheme: dark) {
+    .story-embed {
+      --se-bg: #111112;
+      --se-fg: #f2f2f0;
+      --se-muted: #9a9a95;
+      --se-card: #1c1c1e;
+      --se-border: #2a2a2c;
+      --se-accent: #232326;
+    }
+  }
+  .story-embed *, .story-embed *::before, .story-embed *::after { box-sizing: border-box; }
+  .story-embed .se-serif { font-family: "Iowan Old Style", "Palatino", Georgia, serif; }
+  .story-embed .se-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+  .story-embed .se-title { font-size: 0.9rem; margin: 0; font-weight: 600; }
+  .story-embed .se-sub { font-size: 0.75rem; color: var(--se-muted); margin: 0.25rem 0 0; }
+  .story-embed .se-main { display: flex; flex-direction: column; gap: 2rem; padding: 1rem 0; min-height: 380px; }
+  .story-embed .se-prompt { text-align: center; font-size: 1.25rem; line-height: 1.6; font-family: "Iowan Old Style", "Palatino", Georgia, serif; margin: 0; }
+  .story-embed .se-grid {
+    display: flex; flex-wrap: wrap; justify-content: center; align-items: center;
+    gap: 1rem; perspective: 1400px; min-height: 260px;
+  }
+  .story-embed .se-card-wrap {
+    width: 150px; height: 220px;
+    transition: transform 0.5s ease, opacity 0.4s ease, width 0.5s ease, height 0.5s ease;
+  }
+  .story-embed .se-card-wrap.chosen { z-index: 2; width: min(540px, 92%); height: auto; min-height: 320px; }
+  .story-embed .se-card-wrap.chosen .se-face { padding: 1.5rem; }
+  .story-embed .se-card-wrap.chosen .se-reveal { font-size: 1.05rem; line-height: 1.7; }
+  .story-embed .se-card-wrap.dismissed { opacity: 0; pointer-events: none; }
+  @media (max-width: 640px) {
+    .story-embed .se-grid { flex-direction: column; }
+    .story-embed .se-card-wrap { width: min(300px, 85%); height: 130px; transform: none !important; }
+  }
+  .story-embed .se-card {
+    width: 100%; height: 100%; background: transparent; border: 0; padding: 0;
+    cursor: pointer; text-align: left; font: inherit; color: inherit;
+  }
+  .story-embed .se-card-inner {
+    position: relative; width: 100%; height: 100%;
+    transition: transform 0.7s cubic-bezier(0.65, 0, 0.35, 1);
+    transform-style: preserve-3d;
+  }
+  .story-embed .se-card-inner.flipped { transform: rotateY(180deg); }
+  .story-embed .se-face {
+    position: absolute; inset: 0;
+    backface-visibility: hidden; -webkit-backface-visibility: hidden;
+    border-radius: 12px; padding: 1rem;
+    display: flex; flex-direction: column;
+    background: var(--se-card); border: 1px solid var(--se-border);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.06);
+    overflow: hidden;
+  }
+  .story-embed .se-back { transform: rotateY(180deg); justify-content: center; overflow-y: auto; }
+  .story-embed .se-card:hover .se-card-inner:not(.flipped) { transform: translateY(-4px); }
+  .story-embed .se-label { font-size: 1rem; font-weight: 500; margin-top: auto; }
+  .story-embed .se-hint { font-size: 0.7rem; color: var(--se-muted); margin-top: 0.5rem; }
+  .story-embed .se-badge { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.2em; color: var(--se-muted); }
+  .story-embed .se-reveal { font-size: 0.95rem; line-height: 1.6; margin: 0; font-family: "Iowan Old Style", "Palatino", Georgia, serif; }
+  .story-embed .se-final {
+    text-align: center; font-size: 1.3rem; line-height: 1.6;
+    max-width: 34rem; margin: auto; padding: 2rem 0;
+    font-family: "Iowan Old Style", "Palatino", Georgia, serif;
+    animation: se-fade 0.5s ease;
+  }
+  .story-embed .se-final .se-badge { display: block; margin-bottom: 1rem; }
+  @keyframes se-fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .story-embed .se-controls { display: flex; justify-content: center; gap: 0.5rem; margin-top: auto; }
+  .story-embed .se-btn {
+    background: var(--se-bg); color: var(--se-fg);
+    border: 1px solid var(--se-border); border-radius: 6px;
+    padding: 0.4rem 0.85rem; font-size: 0.85rem; font-family: inherit; cursor: pointer;
+  }
+  .story-embed .se-btn:hover:not(:disabled) { background: var(--se-accent); }
+  .story-embed .se-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .story-embed .se-fade-in { animation: se-fade 0.4s ease; }
+</style>
+
+<script>
+(function () {
+  /* ==========================================================
+     STORY DATA — edit this to author your own branching story.
+     Scene shape:
+       { prompt, cards: [{ label, reveal, next, if?, set? }] }
+       { final }  -> ending scene
+     `if`: expression over vars, e.g. "mood >= 1"
+     `set`: object merged into vars when this card is chosen
+     ========================================================== */
+  var STORY = {
+    id: "embed-sample",
+    start: "s1",
+    vars: { mood: 0 },
+    scenes: {
+      s1: {
+        prompt: "You stand at a crossroads at dusk. What draws your eye?",
+        cards: [
+          { label: "The lantern", reveal: "You lift the lantern from its hook. Warm light pools around your boots, and the road ahead sheds its shadows one step at a time.", next: "s2", set: { mood: 1 } },
+          { label: "The letter",  reveal: "The paper is folded once, sealed with wax. The ink is still wet — someone left it for you moments ago.", next: "s2" },
+          { label: "The key",     reveal: "Cold iron, heavier than it should be. It fits no lock you have seen, but your fingers know its shape.", next: "s2" },
+          { label: "The mirror",  reveal: "Your reflection blinks a half-second late. When you smile, it hesitates before smiling back.", next: "s2" },
+          { label: "The silence", reveal: "You choose to listen instead of look. Something in the dark listens with you, patient and unhurried.", next: "s2" }
+        ]
+      },
+      s2: {
+        prompt: "A door appears at the edge of the clearing. How do you approach it?",
+        cards: [
+          { label: "Knock softly", reveal: "Three quiet raps. The door opens on its own, revealing a room that recognizes you.", next: "end" },
+          { label: "Listen first", reveal: "Footsteps inside, then quiet. You wait until the quiet feels like an invitation.", next: "end" },
+          { label: "Step through", reveal: "You do not hesitate. The doorway breathes you in and gives you back to yourself, changed.", next: "end", if: "mood >= 1" }
+        ]
+      },
+      end: { final: "The story remembers the shape you gave it. Somewhere, a lantern is still burning for you. Thank you for playing." }
+    }
+  };
+
+  /* ==========================================================
+     ENGINE (self-contained — no external dependencies)
+     ========================================================== */
+  var KEY = "story:" + STORY.id;
+  function initialState() { return { sceneId: STORY.start, vars: Object.assign({}, STORY.vars || {}), history: [] }; }
+  function loadState() {
+    try { var raw = localStorage.getItem(KEY); if (!raw) return null;
+      var s = JSON.parse(raw); if (!STORY.scenes[s.sceneId]) return null; return s;
+    } catch (e) { return null; }
+  }
+  function saveState(s) { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {} }
+  function clearSaved() { try { localStorage.removeItem(KEY); } catch (e) {} }
+
+  function tokenize(src) {
+    var t = [], i = 0;
+    while (i < src.length) {
+      var c = src[i];
+      if (c === " " || c === "\t") { i++; continue; }
+      if (c === "(") { t.push({t:"lp"}); i++; continue; }
+      if (c === ")") { t.push({t:"rp"}); i++; continue; }
+      if (c === "!" && src[i+1] !== "=") { t.push({t:"op",v:"!"}); i++; continue; }
+      var two = src.slice(i, i+2);
+      if (["==","!=",">=","<=","&&","||"].indexOf(two) >= 0) { t.push({t:"op",v:two}); i+=2; continue; }
+      if (c === ">" || c === "<") { t.push({t:"op",v:c}); i++; continue; }
+      if (c === '"' || c === "'") { var j=i+1; while (j<src.length && src[j]!==c) j++; t.push({t:"str",v:src.slice(i+1,j)}); i=j+1; continue; }
+      if (/[0-9]/.test(c)) { var j2=i; while (j2<src.length && /[0-9.]/.test(src[j2])) j2++; t.push({t:"num",v:Number(src.slice(i,j2))}); i=j2; continue; }
+      if (/[A-Za-z_]/.test(c)) {
+        var j3=i; while (j3<src.length && /[A-Za-z0-9_]/.test(src[j3])) j3++;
+        var w = src.slice(i,j3);
+        if (w === "true") t.push({t:"bool",v:true});
+        else if (w === "false") t.push({t:"bool",v:false});
+        else t.push({t:"id",v:w});
+        i = j3; continue;
+      }
+      throw new Error("bad char: " + c);
+    }
+    return t;
+  }
+  function evalCond(expr, vars) {
+    var toks = tokenize(expr), p = 0;
+    function peek(){return toks[p];} function eat(){return toks[p++];} function B(v){return Boolean(v);}
+    function atom() {
+      var t = eat(); if (!t) throw 0;
+      if (t.t === "num" || t.t === "str" || t.t === "bool") return t.v;
+      if (t.t === "id") return vars[t.v];
+      if (t.t === "lp") { var v = or(); if (eat().t !== "rp") throw 0; return v; }
+      if (t.t === "op" && t.v === "!") return !B(atom());
+      throw 0;
+    }
+    function cmp() {
+      var l = atom(), t = peek();
+      if (t && t.t==="op" && ["==","!=",">","<",">=","<="].indexOf(t.v) >= 0) {
+        eat(); var r = atom();
+        switch (t.v) { case "==": return l===r; case "!=": return l!==r;
+          case ">": return l>r; case "<": return l<r; case ">=": return l>=r; case "<=": return l<=r; }
+      }
+      return l;
+    }
+    function and() { var l = cmp(); while (peek() && peek().t==="op" && peek().v==="&&") { eat(); l = B(l) && B(cmp()); } return l; }
+    function or()  { var l = and(); while (peek() && peek().t==="op" && peek().v==="||") { eat(); l = B(l) || B(and()); } return l; }
+    return B(or());
+  }
+  function visibleCards(scene, vars) {
+    if (!scene.cards) return [];
+    return scene.cards.filter(function (c) {
+      if (!c.if) return true;
+      try { return evalCond(c.if, vars); } catch (e) { return false; }
+    });
+  }
+
+  /* ==========================================================
+     RENDER
+     ========================================================== */
+  var root = document.getElementById("story-embed-root");
+  var stage = root.querySelector(".se-stage");
+  var btnBack = root.querySelector('[data-action="back"]');
+  var btnRestart = root.querySelector('[data-action="restart"]');
+  var state = loadState() || initialState();
+  var chosenIndex = null;
+
+  btnBack.addEventListener("click", function () {
+    if (state.history.length === 0 || chosenIndex !== null) return;
+    var prev = state.history[state.history.length - 1];
+    state = { sceneId: prev.sceneId, vars: prev.vars, history: state.history.slice(0, -1) };
+    chosenIndex = null; saveState(state); render();
+  });
+  btnRestart.addEventListener("click", function () {
+    clearSaved(); state = initialState(); chosenIndex = null; render();
+  });
+
+  function escapeHtml(s) { return String(s).replace(/[&<>"']/g, function (c) { return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+
+  function render() {
+    var scene = STORY.scenes[state.sceneId];
+    stage.innerHTML = "";
+    var isEnd = !scene.cards || scene.cards.length === 0 || scene.final;
+
+    if (isEnd) {
+      var d = document.createElement("div"); d.className = "se-final";
+      d.innerHTML = '<span class="se-badge">The end</span>';
+      var pf = document.createElement("p"); pf.style.margin = 0;
+      pf.textContent = scene.final || "The story ends here.";
+      d.appendChild(pf); stage.appendChild(d); updateControls(); return;
+    }
+
+    var wrap = document.createElement("div"); wrap.className = "se-fade-in";
+    var prompt = document.createElement("p"); prompt.className = "se-prompt";
+    prompt.textContent = scene.prompt || ""; wrap.appendChild(prompt);
+
+    var grid = document.createElement("div"); grid.className = "se-grid";
+    var cards = visibleCards(scene, state.vars);
+    var mid = (cards.length - 1) / 2;
+
+    cards.forEach(function (c, i) {
+      var cw = document.createElement("div"); cw.className = "se-card-wrap";
+      var offset = i - mid;
+      cw.style.transform = "translate(" + (offset*8) + "px, " + (Math.abs(offset)*6) + "px) rotate(" + (offset*4) + "deg)";
+
+      var btn = document.createElement("button"); btn.className = "se-card"; btn.type = "button";
+      var inner = document.createElement("div"); inner.className = "se-card-inner";
+      var front = document.createElement("div"); front.className = "se-face se-front";
+      front.innerHTML = '<div class="se-badge">Card ' + (i+1) + '</div><div class="se-label">' + escapeHtml(c.label) + '</div><div class="se-hint">Tap to reveal</div>';
+      var back = document.createElement("div"); back.className = "se-face se-back";
+      var rp = document.createElement("p"); rp.className = "se-reveal";
+      back.appendChild(rp);
+      inner.appendChild(front); inner.appendChild(back);
+      btn.appendChild(inner); cw.appendChild(btn); grid.appendChild(cw);
+
+      btn.addEventListener("click", function () {
+        if (chosenIndex !== null) return;
+        chosenIndex = i;
+        Array.prototype.forEach.call(grid.children, function (el, j) {
+          if (j !== i) el.classList.add("dismissed");
+          else { el.classList.add("chosen"); el.style.transform = "translate(0,0) rotate(0)"; }
+        });
+        inner.classList.add("flipped");
+        rp.textContent = c.reveal;
+        updateControls();
+        setTimeout(function () {
+          var nextVars = Object.assign({}, state.vars, c.set || {});
+          state = { sceneId: c.next, vars: nextVars, history: state.history.concat([{ sceneId: state.sceneId, vars: state.vars }]) };
+          chosenIndex = null; saveState(state); render();
+        }, 3600);
+      });
+    });
+
+    wrap.appendChild(grid); stage.appendChild(wrap); updateControls();
+  }
+  function updateControls() { btnBack.disabled = state.history.length === 0 || chosenIndex !== null; }
+
+  render();
+})();
+</script>
