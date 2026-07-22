@@ -1,92 +1,65 @@
-# Interactive Storytelling Template — Card Flip Flow
+## Goal
 
-A reusable branching-story template where each choice is a **card**. Cards fan out below a prompt; clicking one flips it to reveal the next passage; then the next set of cards appears. Delivered as both a standalone HTML file and a live demo in this app.
+Add a `GUIDE.md` at the project root that walks a non-developer author through (a) embedding the story widget as a raw HTML/JS block in a CMS article, and (b) customizing the three things they asked about.
 
-## Interaction flow
+The guide targets **`public/story-cards.html`** — the self-contained standalone template. The React version (`src/**`) is left untouched; it's just the live demo.
 
-Three stages, driven by a JSON story graph:
+## GUIDE.md outline
 
-1. **Stage 1 — Prompt + 5 cards.** A line of text (question/prompt) appears at the top. Below it, 5 face-down cards fan out. User clicks one.
-2. **Card flip reveal.** The chosen card flips (3D CSS transform) to show a longer passage of text on its back. Non-chosen cards fade out. The revealed card expands/centers so its text is comfortably readable.
-3. **Stage 2 — 3 cards.** A new prompt line appears above 3 fresh face-down cards. User clicks one.
-4. **Final message.** The chosen card flips, other two fade out, and a final closing message is shown (styled distinctly — no further cards).
+**1. Embedding in your CMS (raw HTML/JS block)**
+- Open `public/story-cards.html`, copy everything from `<style>…</style>` and `<main>…</main>` and `<script>…</script>` (the three blocks).
+- In your CMS article, insert an "HTML embed" / "Custom HTML" / "Raw HTML" block and paste all three blocks into it.
+- Notes: the widget is self-contained (no external CSS/JS, no fonts). One widget per article — `localStorage` key is `story:<STORY.id>`, so if you embed two, give each a unique `id` in the `STORY` constant to keep their saved progress separate.
+- Sanity check: the block should render a prompt + fan of cards. If the CMS strips `<style>` or `<script>`, switch to an "unfiltered HTML" block or ask the CMS admin.
 
-Back / Restart controls stay available throughout. Progress auto-saves.
+**2. Editing the story text (JSON-shaped `STORY` constant)**
+- Locate the `const STORY = { … }` block inside `<script>`.
+- Anatomy, with a small annotated example:
+  - `id`: unique string, controls the save key.
+  - `start`: which scene shows first.
+  - `vars`: starting variables (e.g. `mood: 0`) used by conditional cards.
+  - `scenes`: object keyed by scene id. Each scene is either:
+    - `{ prompt, cards: [ … ] }` — a choice screen, or
+    - `{ final: "…" }` — the ending screen.
+  - Each card: `{ label, reveal, next, if?, set? }`
+    - `label` — front of the card
+    - `reveal` — text shown after flip
+    - `next` — id of the next scene
+    - `if` — optional condition (e.g. `"mood >= 1"`) to show the card
+    - `set` — optional variable updates when this card is chosen (e.g. `{ mood: 1 }`)
+- Rules of thumb: keep commas between items, wrap text in double quotes, escape inner quotes with `\"`, keep every `next` pointing at a real scene id, and end with a scene that has `final`.
 
-## Story JSON schema
+**3. Restyling the flipped (revealed) card**
+- All look-and-feel lives in the `<style>` block. Pointers to the exact selectors:
+  - `.card-wrap.chosen` — size of the enlarged card (`width`, `min-height`).
+  - `.card-wrap.chosen .face` — inner padding of the flipped card.
+  - `.card-wrap.chosen .reveal` — font size / line height of the revealed text.
+  - `.face` — background, border, border-radius, shadow of every card face (front and back share this).
+  - `.back` — extra rules that apply only to the flipped side (e.g. alignment, scroll).
+  - `.reveal` — base typography of the revealed paragraph; the class `serif` on that element switches it to the serif font stack.
+  - `:root` custom properties (`--bg`, `--fg`, `--card`, `--border`, `--accent`, `--muted`) — change these to recolor the whole widget in one place; dark-mode overrides live in the `@media (prefers-color-scheme: dark)` block just below.
+- Include 2 copy-paste recipes: "bigger reveal card" (bump `.card-wrap.chosen` width + `.reveal` font-size) and "warmer palette" (swap `--bg`, `--card`, `--accent`).
 
-The engine is generic (any number of stages, any card count per stage). The demo story uses 5 → 3 → end to match the requested flow.
+**4. Card size and position (front-of-card layout)**
+- Size of every idle card: `.card-wrap` — `width` and `height` (defaults 160×240). Mobile override lives in `@media (max-width: 640px) .card-wrap`.
+- Fan spread + tilt: in the `<script>`, inside `render()`, the line
+  `cw.style.transform = \`translate(${offset*8}px, ${Math.abs(offset)*6}px) rotate(${offset*4}deg)\`;`
+  controls horizontal spacing (`*8`), vertical arc (`*6`), and rotation per card (`*4`). Increase for a wider fan, set the rotation multiplier to `0` for a flat row.
+- Row vs. stack vs. wrap: `.grid` uses `display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem`. Change `gap` for spacing, `justify-content` for alignment, or set `flex-direction: column` for a vertical stack.
+- Front-of-card padding and text sizes: `.face` (padding), `.label` (front label size), `.badge` (the "Card N" label), `.hint` ("Tap to reveal").
+- Overall column width of the widget: `main { max-width: 720px }`.
 
-```text
-{
-  "id": "sample",
-  "start": "s1",
-  "vars": { "mood": 0 },
-  "scenes": {
-    "s1": {
-      "prompt": "You stand at a crossroads. What draws your eye?",
-      "cards": [
-        { "label": "The lantern",  "reveal": "You lift the lantern...", "next": "s2", "set": { "mood": 1 } },
-        { "label": "The letter",   "reveal": "The ink is still wet...", "next": "s2" },
-        { "label": "The key",      "reveal": "Cold iron, heavy...",     "next": "s2" },
-        { "label": "The mirror",   "reveal": "Your reflection blinks late...", "next": "s2" },
-        { "label": "The silence",  "reveal": "You listen. Something listens back.", "next": "s2" }
-      ]
-    },
-    "s2": {
-      "prompt": "A door appears. How do you approach it?",
-      "cards": [
-        { "label": "Knock",  "reveal": "The door opens on its own.", "next": "end" },
-        { "label": "Listen", "reveal": "Footsteps, then quiet.",     "next": "end" },
-        { "label": "Enter",  "reveal": "You step through.",          "next": "end", "if": "mood >= 1" }
-      ]
-    },
-    "end": {
-      "final": "The story remembers you. Thank you for playing."
-    }
-  }
-}
-```
+**5. Troubleshooting cheatsheet**
+- Cards don't flip: CMS stripped the `<script>` block — use a raw/unfiltered HTML block.
+- Styles look wrong / clash with article CSS: wrap the three blocks in a single `<div class="story-widget">…</div>` and prefix rules, or use the iframe approach instead (mentioned as an alternative but not the primary path).
+- Progress from a previous test won't clear: click Restart, or change `STORY.id` to a new string.
+- Card disappears unexpectedly: it has an `if:` condition that isn't met — check the `set:` values on earlier cards.
 
-- Scene has either `cards[]` (interactive) or `final` (ending).
-- Each card: `label` (front), `reveal` (back text), `next` (scene id), optional `set` / `if` for variables and conditional visibility.
-- Any card count per stage works — the layout adapts (fan for 5, arc for 3, etc.).
+## Out of scope
 
-## Visual + motion (minimal / neutral)
+- No code changes to `public/story-cards.html`, the React demo, styles, or routes.
+- No new /guide route (per your answer, markdown only).
 
-- Single centered column on desktop; cards fan slightly with small rotation; on mobile they stack vertically.
-- Cards: rounded rectangles, subtle border + shadow, front shows label centered with a small ornamental mark, back shows reveal text.
-- Flip: `transform: rotateY(180deg)` with `transform-style: preserve-3d`, ~600ms ease.
-- Non-chosen cards fade + slide out (200ms) while chosen card scales up and centers.
-- Prompt line and new card set fade in using the existing `animate-fade-in` utility.
-- System serif for prose, clean sans for UI; light + dark via `prefers-color-scheme`; semantic tokens in the React version.
+## Deliverable
 
-## Features
-
-- Save/restore: current scene id, vars, and history in `localStorage` (per `story.id`); resume on reload.
-- Back button (pops history, unflips) and Restart (clears state).
-- Variables & conditions: `set` updates vars when a card is chosen; `if` hides cards whose condition is false.
-- Safe condition evaluator: hand-rolled parser for `name`, `name op value`, and `&&` / `||` / `!` — no `eval` / `new Function`.
-
-## Deliverables
-
-### 1. Standalone template — `public/story-cards.html`
-- One self-contained file: `<style>`, `<script>`, inline `STORY` JSON constant preloaded with the 5 → 3 → end sample.
-- No dependencies, no build. Open in any browser. Edit the JSON to author a new story.
-- Download link surfaced on the demo page.
-
-### 2. Live demo route
-- `src/routes/index.tsx` — replaces the placeholder; renders the demo with the sample story and a "Download template" link to the standalone file.
-- `src/lib/story-engine.ts` — pure TS: `createStory(data)`, `choose(cardIndex)`, `back()`, `restart()`, save/load, safe condition + assignment evaluator.
-- `src/components/StoryPlayer.tsx` — orchestrates prompt, card grid, flip animation, reveal, transitions, final message, Back/Restart.
-- `src/components/StoryCard.tsx` — single flippable card (front/back, 3D transform, click handler, disabled state).
-- `src/stories/sample-story.ts` — the 5 → 3 → end sample above.
-- Head metadata: title "Interactive Story Cards", matching description + og/twitter.
-
-## Technical notes
-
-- The standalone HTML re-implements the same logic inline (kept intentionally decoupled so the file stays truly portable); the React version wraps the same behavior with components.
-- Card layout uses CSS grid on small screens and a flex row with per-card `rotate()` on wider screens for the fan effect.
-- Flip uses `perspective` on the container and `backface-visibility: hidden` on both faces.
-- Styling uses existing semantic tokens (`bg-background`, `text-foreground`, `text-muted-foreground`, `border`) so it respects the design system.
-- Accessibility: cards are `<button>` elements with `aria-label`, keyboard-focusable, Enter/Space activates; reduced-motion disables the flip and uses fade instead.
+- `GUIDE.md` at the project root, ~150–220 lines, with the sections above and short copy-paste snippets. Linked from `README.md` with a one-line pointer.
