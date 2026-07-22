@@ -2,6 +2,12 @@
 
 This project was built with [Lovable](https://lovable.dev).
 
+## Authoring & embedding
+
+See [GUIDE.md](./GUIDE.md) for how to embed the story-cards widget in a CMS
+article and how to edit story text, restyle the flipped card, and change
+card size / position.
+
 ## Build with Lovable
 
 Open your project in the [Lovable editor](https://lovable.dev) and keep building.
